@@ -1,25 +1,15 @@
-import json
-from pathlib import Path
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+
 
 from .config import settings
 from .demo import ARSENAL, TARGETS
 from .models import ArsenalRecord, AuditRequest, IndexRequest, SyntheticRequest, TargetRecord
-from .rag import GeminiRAG
 from .anonymization import compare
 from .models import AnonymizationRequest
 from uuid import uuid4
 from .synthetic import generate_synthetic_data
 from .tabular import parse_upload
 
-app = FastAPI(title="Adversarial Re-identification RAG Engine", version="1.0.0")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-
-def service() -> GeminiRAG:
-    return GeminiRAG(settings)
 
 
 @app.get("/", include_in_schema=False)
@@ -64,10 +54,7 @@ def audit(request: AuditRequest):
     except ValueError as exc: raise HTTPException(400, str(exc))
     except Exception as exc: raise HTTPException(502, f"GEMINI RAG assessment failed: {exc}")
 
-@app.get("/api/reports")
-def reports():
-    if not settings.reports_path.exists(): return []
-    return [{"report_id": p.stem, "created_at": p.stat().st_mtime} for p in sorted(settings.reports_path.glob("*.json"), reverse=True)]
+
 
 @app.get("/api/reports/{report_id}")
 def report(report_id: str):
